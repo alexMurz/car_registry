@@ -1,11 +1,9 @@
 package repo
 
 import java.time.LocalDate
-import java.util
 
 import akka.actor.ActorSystem
 import javax.inject.Inject
-import play.api.Logger
 import play.api.libs.concurrent.CustomExecutionContext
 
 import scala.collection.mutable.ListBuffer
@@ -53,32 +51,22 @@ trait DataRepository {
 
 /// List Repository
 //@Singleton
-class ListRepository(list: ListBuffer[DataPoint])
-                    (implicit val ec: RepositoryContext)
+class ListRepository(list: ListBuffer[DataPoint])(implicit val ec: RepositoryContext)
   extends DataRepository
 {
-  private val logger = Logger(this.getClass)
 
-  override def getAll: Future[Iterable[DataPoint]] = Future {
-    logger.trace("getAll")
-    list
-  }
+  override def getAll: Future[Iterable[DataPoint]] = Future { list }
 
-  override def get(id: DataId): Future[Option[DataPoint]] = Future {
-    logger.trace(s"get($id)")
-    list.find(_.id == id)
-  }
+  override def get(id: DataId): Future[Option[DataPoint]] = Future { list.find(_.id == id) }
 
-  override def insert(point: DataPoint): Future[DataId] = Future {
-    logger.trace(s"insert(..) new data, before data size ${list.size}")
+  override def insert(point: DataPoint): Future[DataId] = Future { ListRepository.this.synchronized {
     val id = nextID
     point.id = id
     list += point
     id
-  }
+  } }
 
-  override def remove(id: DataId): Future[Boolean] = Future {
-    logger.trace(s"remove($id), before data size ${list.size}")
+  override def remove(id: DataId): Future[Boolean] = Future { ListRepository.this.synchronized {
     // ListBuffer does not have retain, or findIndexed?
     list
       .find(_.id == id)
@@ -89,7 +77,7 @@ class ListRepository(list: ListBuffer[DataPoint])
           true
         } else false
       )
-  }
+  } }
 
   /**
    * @return next empty ID
