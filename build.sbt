@@ -5,7 +5,7 @@ enablePlugins()
 lazy val root = (project in file("."))
   .enablePlugins(PlayScala, PlayLayoutPlugin, JavaAgentPackaging)
   .settings(
-    name := """scala_server""",
+    name := """car_registry""",
     scalaVersion := "2.13.3",
     libraryDependencies ++= Seq(
       guice,
