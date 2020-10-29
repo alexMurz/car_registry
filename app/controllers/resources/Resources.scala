@@ -42,20 +42,20 @@ object ResourceDataPoint {
 sealed trait DeFail
 object DeFail {
   def toJson(ty: DeFail): JsValue = { ty match {
-    case InsertFailMissingField(name) => JsObject(Seq(
+    case DeFailMissingField(name) => JsObject(Seq(
       "ty" -> JsString("Missing Field"),
       "desc" -> JsString(s"Missing required field: `$name`")
     ))
-    case InsertFailMalformedField(field, got, ty, ex) => JsObject(Seq(
+    case DeFailMalformedField(field, got, ty, ex) => JsObject(Seq(
       "ty" -> JsString("Malformed Input"),
       "desc" -> JsString(s"Malformed input for field `$field`, expected type `$ty` (ex: `$ex`), got `$got`")
     ))
   } }
 }
 /// Expected field, but its missing
-case class InsertFailMissingField(name: String) extends DeFail
-/// Unable to deserialize field `field`, `got` as type `ty`, example `ex`
-case class InsertFailMalformedField(field: String, got: String, ty: String, ex: String) extends DeFail
+case class DeFailMissingField(name: String) extends DeFail
+/// Unable to deserialize field `field`, `got` expected type `ty`, example `ex`
+case class DeFailMalformedField(field: String, got: String, ty: String, ex: String) extends DeFail
 
 
 ////////////////////////////////////////////////////
@@ -121,9 +121,6 @@ trait ResourceHandler {
   // Remove item by ID
   def remove(id: String): Future[QResult]
 }
-trait StatTracker {
-  def stats: Future[QResult]
-}
 
 
 class DataResourceHandler @Inject()(routerProvider: Provider[BaseRouter], repo: DataRepository)
@@ -170,7 +167,7 @@ class DataResourceHandler @Inject()(routerProvider: Provider[BaseRouter], repo: 
         catch {
           case _: NoSuchElementException =>
             logger.trace(s"Missing field: $name")
-            errors.addOne(InsertFailMissingField(name))
+            errors.addOne(DeFailMissingField(name))
             None
         }
       }
@@ -188,7 +185,7 @@ class DataResourceHandler @Inject()(routerProvider: Provider[BaseRouter], repo: 
         } catch {
           case _: Throwable =>
             logger.trace(s"Malformed date: $raw_date")
-            errors.addOne(InsertFailMalformedField("date", raw_date, "LocalDate", "2020-12-10 (ISO Format YYYY-MM-DD)"))
+            errors.addOne(DeFailMalformedField("date", raw_date, "LocalDate", "2020-12-10 (ISO Format YYYY-MM-DD)"))
             None
         }
       }
