@@ -17,27 +17,25 @@ import play.api.mvc._
  *
  */
 
-sealed trait QResult {
-  def toJson: JsObject = {
-    this match {
-      case success: QSuccess => success.json.map { x => JsObject(Seq(
-        "success" -> JsTrue,
-        "result" -> x
-      ))}.getOrElse { JsObject(Seq(
-        "success" -> JsTrue
-      ))}
-      case error: QFailure => error.json.map { x => JsObject(Seq(
-        "success" -> JsFalse,
-        "result" -> x
-      ))}.getOrElse { JsObject(Seq(
-        "success" -> JsFalse
-      ))}
-    }
-  }
-
-  def toResult(implicit results: Results): Result = this match {
-    case success: QSuccess => results.Status(success.status)(this.toJson)
-    case failure: QFailure => results.Status(failure.status)(this.toJson)
+sealed trait QResult
+object QResult {
+  def toJson(v: QResult): JsObject = {v match {
+    case success: QSuccess => success.json.map { x => JsObject(Seq(
+      "success" -> JsTrue,
+      "result" -> x
+    ))}.getOrElse { JsObject(Seq(
+      "success" -> JsTrue
+    ))}
+    case error: QFailure => error.json.map { x => JsObject(Seq(
+      "success" -> JsFalse,
+      "result" -> x
+    ))}.getOrElse { JsObject(Seq(
+      "success" -> JsFalse
+    ))}
+  } }
+  def toResult(v: QResult)(implicit results: Results): Result = v match {
+    case success: QSuccess => results.Status(success.status)(QResult.toJson(v))
+    case failure: QFailure => results.Status(failure.status)(QResult.toJson(v))
   }
 }
 

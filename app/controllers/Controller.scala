@@ -6,6 +6,7 @@ import play.api.http.{FileMimeTypes, HttpVerbs}
 import play.api.i18n.{Langs, MessagesApi}
 import play.api.mvc._
 import play.api.{Logger, MarkerContext}
+import repo.QResult
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -81,30 +82,30 @@ class MainController @Inject()(cc: MainControllerComponents)(implicit ec: Execut
   implicit val results: Results = this
 
   def index: Action[AnyContent] = MainAction.async { implicit request =>
-    logger.trace("index")
-    resources.getAll.map { _.toResult } // Ok(it.toJson) }
+    logger.trace(s"index ${request.queryString.mkString(";")}")
+    resources.getAll(request.queryString).map { QResult.toResult(_) }
   }
 
   def get(id: String): Action[AnyContent] = MainAction.async { implicit request =>
     logger.trace(s"get($id): ")
-    resources.lookup(id).map { _.toResult }
+    resources.lookup(id).map { QResult.toResult(_) }
   }
 
   def insert: Action[AnyContent] = MainAction.async { implicit request =>
     logger.trace(s"insert")
-    resources.insert(request.body.asJson).map { _.toResult }
+    resources.insert(request.body.asJson).map { QResult.toResult(_) }
   }
 
   def remove(id: String): Action[AnyContent] = MainAction.async { implicit request =>
     logger.trace(s"remove($id): ")
-    resources.remove(id).map { _.toResult }
+    resources.remove(id).map { QResult.toResult(_) }
   }
 
   def stats: Action[AnyContent] = MainAction.async { implicit request =>
     logger.trace(s"stats")
     resources match {
       case tracker: StatTracker =>
-        tracker.stats.map { _.toResult }
+        tracker.stats.map { QResult.toResult(_) }
       case _ =>
         Future { NoContent }
     }
