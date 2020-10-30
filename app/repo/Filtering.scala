@@ -79,15 +79,16 @@ object Bounds {
    */
   def fromSequence(data: Seq[String]): Option[Bounds[String]] = {
     data match {
-      case Seq("..") || Seq() => Some(Bounds(OpenEdge(), OpenEdge()))
+      case Seq() => Some(Bounds(OpenEdge(), OpenEdge()))
+      case Seq("..") => Some(Bounds(OpenEdge(), OpenEdge()))
       case Seq(a) => Some(Bounds(InclusiveEdge(a), InclusiveEdge(a)))
 
       case Seq(a, "..") => Some(Bounds(InclusiveEdge(a), OpenEdge()))
       case Seq("..", b) => Some(Bounds(OpenEdge(), ExclusiveEdge(b)))
-      case Seq("..=", b, _@_*) => Some(Bounds(OpenEdge(), InclusiveEdge(b)))
+      case Seq("..=", b) => Some(Bounds(OpenEdge(), InclusiveEdge(b)))
 
-      case Seq(a, "..", b, _@_*) => Some(Bounds(InclusiveEdge(a), ExclusiveEdge(b)))
-      case Seq(a, "..=", b, _@_*) => Some(Bounds(InclusiveEdge(a), InclusiveEdge(b)))
+      case Seq(a, "..", b) => Some(Bounds(InclusiveEdge(a), ExclusiveEdge(b)))
+      case Seq(a, "..=", b) => Some(Bounds(InclusiveEdge(a), InclusiveEdge(b)))
 
       case _ => None
     }
