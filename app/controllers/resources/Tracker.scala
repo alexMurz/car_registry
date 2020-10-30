@@ -79,7 +79,7 @@ private class TimingTrack
 class TrackedResourceHandler(base: DataResourceHandler)(implicit ec: ExecutionContext) extends ResourceHandler with StatTracker {
 
   private val getAllTimer = new TimingTrack("getAll")
-  override def getAll: Future[QResult] = getAllTimer(base.getAll)
+  override def getAll(filters: Map[String, Seq[String]]): Future[QResult] = getAllTimer(base.getAll(filters))
 
   private val lookupTimer = new TimingTrack("lookup")
   override def lookup(id: String): Future[QResult] = lookupTimer(base.lookup(id))
