@@ -113,7 +113,7 @@ object RemoveResult {
 /// ResourceHandler trait, to wrap resource handler with performance tracker and then return same trait for ease of use
 trait ResourceHandler {
   // Return all items
-  def getAll: Future[QResult]
+  def getAll(filters: Map[String, Seq[String]]): Future[QResult]
   // Find item by ID
   def lookup(id: String): Future[QResult]
   // Insert item, using JsValue
@@ -129,9 +129,33 @@ class DataResourceHandler @Inject()(routerProvider: Provider[BaseRouter], repo: 
 {
   private val logger = Logger(this.getClass)
 
-  override def getAll: Future[QResult] = {
-    logger.trace("getAll")
-    repo.getAll.map { x => QSuccess(x.map(toResource)) }
+  override def getAll(filters: Map[String, Seq[String]]): Future[QResult] = {
+    logger.trace(s"getAll $filters")
+
+    /// Convert map into sequence of filters
+    val parsed_filters = filters
+      // Try key to DataColumn
+      .flatMap { entry =>
+        val key = entry._1
+        val v = entry._2
+        key.toLowerCase match {
+          case "id"   => Some((DataColumnId, v))
+          case "num"  => Some((DataColumnNum, v))
+          case "mark" => Some((DataColumnMark, v))
+          case "color"=> Some((DataColumnColor, v))
+          case "date" => Some((DataColumnDate, v))
+          case _ => None
+        }
+      }
+      // Value to Bounds
+      .flatMap { v =>
+        val col: DataColumn = v._1
+        Bounds.fromSequence(v._2).map { bounds => DataFilter(col, bounds) }
+      }
+      .toSeq
+
+    logger.trace(s"List of filters ${parsed_filters.mkString(";")}")
+    repo.getAll(parsed_filters).map { x => QSuccess(x.map(toResource)) }
   }
 
   /// Find entry with ID
