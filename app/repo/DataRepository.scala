@@ -6,7 +6,6 @@ import akka.actor.ActorSystem
 import javax.inject.Inject
 import play.api.libs.concurrent.CustomExecutionContext
 
-import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
 
 /**
@@ -26,6 +25,22 @@ object DataId {
 class DataPoint(var id: DataId, var num: String, var mark: String, var color: String, var date: LocalDate) {
 }
 
+/**
+ * DataPoint column names, for filtering purposes
+ */
+sealed trait DataColumn
+case object DataColumnId extends DataColumn
+case object DataColumnNum extends DataColumn
+case object DataColumnMark extends DataColumn
+case object DataColumnColor extends DataColumn
+case object DataColumnDate extends DataColumn
+
+/**
+ * Filter Params
+ */
+case class DataFilter(col: DataColumn, bounds: Bounds[String])
+
+
 class RepositoryContext @Inject()(actorSystem: ActorSystem)
   extends CustomExecutionContext(actorSystem, "repository.dispatcher")
 
@@ -36,7 +51,7 @@ class RepositoryContext @Inject()(actorSystem: ActorSystem)
 trait DataRepository {
 
   /// Return all DataPoint in this repository
-  def getAll: Future[Iterable[DataPoint]]
+  def getAll(filters: Seq[DataFilter]): Future[Iterable[DataPoint]]
 
   /// Find for ID
   def get(id: DataId): Future[Option[DataPoint]]
@@ -48,47 +63,3 @@ trait DataRepository {
   def remove(id: DataId): Future[Boolean]
 
 }
-
-/// List Repository
-//@Singleton
-class ListRepository(list: ListBuffer[DataPoint])(implicit val ec: RepositoryContext)
-  extends DataRepository
-{
-
-  override def getAll: Future[Iterable[DataPoint]] = Future { list }
-
-  override def get(id: DataId): Future[Option[DataPoint]] = Future { list.find(_.id == id) }
-
-  override def insert(point: DataPoint): Future[DataId] = Future { ListRepository.this.synchronized {
-    val id = nextID
-    point.id = id
-    list += point
-    id
-  } }
-
-  override def remove(id: DataId): Future[Boolean] = Future { ListRepository.this.synchronized {
-    // ListBuffer does not have retain, or findIndexed?
-    list
-      .find(_.id == id)
-      .map(item => list.indexOf(item))
-      .exists(index =>
-        if (index >= 0) {
-          list.remove(index)
-          true
-        } else false
-      )
-  } }
-
-  /**
-   * @return next empty ID
-   */
-  private var ai = 0 // Auto Increment index
-  private def nextID: DataId = {
-    val i = ai
-    ai += 1
-    DataId(i)
-  }
-
-}
-
-class EmptyListRepository @Inject()(implicit ec: RepositoryContext) extends ListRepository(ListBuffer())(ec)
