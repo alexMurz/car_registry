@@ -68,6 +68,7 @@ case class Bounds[T](lo: Edge[T], hi: Edge[T]) {
 
 object Bounds {
   /**
+   *
    * Try make bounds from Seq
    * Seq() => Open bounds
    * Seq(a) => Inclusive(a) to Inclusive(a)
@@ -78,7 +79,7 @@ object Bounds {
    */
   def fromSequence(data: Seq[String]): Option[Bounds[String]] = {
     data match {
-      case Seq() => Some(Bounds(OpenEdge(), OpenEdge()))
+      case Seq("..") || Seq() => Some(Bounds(OpenEdge(), OpenEdge()))
       case Seq(a) => Some(Bounds(InclusiveEdge(a), InclusiveEdge(a)))
 
       case Seq(a, "..") => Some(Bounds(InclusiveEdge(a), OpenEdge()))

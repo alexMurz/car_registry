@@ -11,16 +11,13 @@ import scala.concurrent.Future
 class ListRepository(list: ListBuffer[DataPoint])(implicit val ec: RepositoryContext)
   extends DataRepository
 {
-  private val logger = Logger(getClass)
 
   implicit class LocalFilter(filter: DataFilter) {
     def test(point: DataPoint): Boolean = {
       filter.col match {
         case DataColumnId =>
           // Transmute Bounds[String] to Bounds[Int]
-          logger.trace("Data ID filtering 1")
           filter.bounds.transmute(_.toIntOption).exists { bounds =>
-            logger.trace(s"Try ID Filtersng with $bounds")
             bounds.isInside(point.id.id)
           }
         case DataColumnNum => filter.bounds.isInside(point.num)
@@ -33,7 +30,6 @@ class ListRepository(list: ListBuffer[DataPoint])(implicit val ec: RepositoryCon
 
   override def getAll(filters: Seq[DataFilter]): Future[Iterable[DataPoint]] = Future {
     list.filter { dataPoint =>
-      logger.trace("AAA")
       filters.forall { _.test(dataPoint) }
     }
   }
